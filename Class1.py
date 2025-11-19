@@ -154,6 +154,53 @@ class DataManager:
 
         print("Saved encrypted data.")
 
+    def dat_wipe(self):
+        file_path = Path(f"Account_Data/{self.usr_nm}.bin")
+
+        if file_path.exists():
+            file_path.unlink()  # deletes file
+            print("Encrypted data deleted.")
+        else:
+            print("No encrypted data found for this user.")
+
+    def ch_passwrd(self, new_password):
+
+        old_password = self.passwrd
+        key_path = Path("key.json")
+
+        # Load key.json
+        with open(key_path, "r") as f:
+            try:
+                key_data = json.load(f)
+            except json.JSONDecodeError:
+                print("Error: key.json cannot be read.")
+                return
+
+        # Ensure the old password exists
+        if old_password not in key_data:
+            print("Error: Old password does not exist in key.json.")
+            return
+
+        # Retrieve the existing key (do NOT regenerate a new key yet)
+        key = key_data[old_password]
+
+        # Delete the old entry
+        del key_data[old_password]
+
+        # Insert the new password → SAME key
+        key_data[new_password] = key
+
+        # Save updated key.json
+        with open(key_path, "w") as f:
+            json.dump(key_data, f, indent=2)
+
+        # Update the object's password for future operations
+        self.passwrd = new_password
+
+        print("Password updated safely.")
+
+
+
 
 if __name__=="__main__":
     fin_struct = {}                                              # TO BE COPIED TO main?

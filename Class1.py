@@ -115,7 +115,7 @@ class DataManager:
                 self.fin_struct[year][month][itm_type][category] = {}
         (self.fin_struct[year][month][itm_type][category]).append(money_list)
 
-    def dat_save(self, user_input):
+    def dat_save(self):
 
         file_nm = self.usr_nm
         keywrd = self.passwrd
@@ -153,6 +153,78 @@ class DataManager:
             f.write(encrypted)
 
         print("Saved encrypted data.")
+
+    def dat_wipe(self):
+        # Delete encrypted data
+        file_path = Path(f"Account_Data/{self.usr_nm}.bin")
+        key_path = Path("key.json")
+
+        if file_path.exists():
+            file_path.unlink()
+            print("Encrypted data deleted.")
+        else:
+            print("No encrypted data found for this user.")
+
+        # --- Remove this user's password/key from key.json ---
+        if key_path.exists():
+            with open(key_path, "r") as f:
+                try:
+                    key_data = json.load(f)
+                except json.JSONDecodeError:
+                    print("Error: key.json could not be read.")
+                    return
+
+            # If the password exists, delete it
+            if self.passwrd in key_data:
+                del key_data[self.passwrd]
+                print("Password/key entry removed from key.json.")
+            else:
+                print("No matching password/key entry found in key.json.")
+
+            # Save the updated key.json
+            with open(key_path, "w") as f:
+                json.dump(key_data, f, indent=2)
+        else:
+            print("No key.json exists to modify.")
+
+
+    def ch_passwrd(self, new_password):
+
+        old_password = self.passwrd
+        key_path = Path("key.json")
+
+        # Load key.json
+        with open(key_path, "r") as f:
+            try:
+                key_data = json.load(f)
+            except json.JSONDecodeError:
+                print("Error: key.json cannot be read.")
+                return
+
+        # Ensure the old password exists
+        if old_password not in key_data:
+            print("Error: Old password does not exist in key.json.")
+            return
+
+        # Retrieve the existing key (do NOT regenerate a new key yet)
+        key = key_data[old_password]
+
+        # Delete the old entry
+        del key_data[old_password]
+
+        # Insert the new password → SAME key
+        key_data[new_password] = key
+
+        # Save updated key.json
+        with open(key_path, "w") as f:
+            json.dump(key_data, f, indent=2)
+
+        # Update the object's password for future operations
+        self.passwrd = new_password
+
+        print("Password updated safely.")
+
+
 
 
 if __name__=="__main__":
